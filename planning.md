@@ -32,7 +32,7 @@ Little to no argument — the post is expressing a feeling in the moment.
 **`ragebait`** — A post that expresses a reaction but the claim is so 
 exaggerated it couldn't be a sincere belief — it exists purely to provoke 
 a response or just be outrageous.
-- "Jalen Brunson is a midget."
+- "Jalen Brunson looks like he's in second grade."
 - "Trade Chet for an air fryer, him not being here is better."
 
 ## Hard Edge Cases
