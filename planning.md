@@ -82,3 +82,6 @@ disclose in AI usage section if used.
 **Failure analysis:** After training, paste misclassified examples into 
 Claude and ask it to identify common patterns. Will verify patterns myself 
 before including in the evaluation report.
+
+## Baseline Reflection
+The baseline model struggles to distinguish ragebait from hot_take. It has near-perfect recall on hot_take (1.00) but only 0.14 recall on ragebait, meaning it is labeling almost all ragebait posts as hot_take instead. Analysis and reaction are both perfect. After fine-tuning, I expect ragebait F1 to improve significantly as the model learns the distinction between an exaggerated provocation and a genuine bold opinion.
