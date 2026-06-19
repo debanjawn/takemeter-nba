@@ -38,7 +38,7 @@ to no argument — the post is expressing a feeling in the moment.
 **`ragebait`** — A post that expresses a reaction but the claim is so 
 exaggerated it couldn't be a sincere belief — it exists purely to provoke a 
 response or just be outrageous.
-- "Jalen Brunson isn't even tall enough to get on the ride."
+- "Jalen Brunson is the size of a traffic cone and somehow gets superstar calls."
 - "Trade Chet for an air fryer, him not being here is better."
 
 ## Data Collection
@@ -112,6 +112,26 @@ the label name. The prompt was based directly on the label definitions in
 **How results were collected:** The notebook ran the prompt against all 30 
 test set examples with a 0.1s delay between requests to respect free-tier 
 rate limits. All 30 responses were parseable.
+
+## Deployed Interface
+
+The repo includes `index.html` — a single-file web app that runs locally in 
+any browser with no installation required.
+
+**How it works:** The interface uses the Groq API directly (the same 
+zero-shot baseline that scored 80% on the test set) rather than the 
+fine-tuned DistilBERT model. This was a deliberate choice — the fine-tuned 
+model scored 43.3% on the test set and never once predicted `ragebait`, 
+making it not useful in practice. The Groq baseline with a well-crafted 
+prompt significantly outperformed it.
+
+**To run it:**
+1. Open `index.html` in your browser
+2. Enter your Groq API key in the field at the top
+3. Paste any NBA comment and hit Classify
+4. The app returns the label (analysis, hot_take, reaction, or ragebait)
+
+The API key is entered at runtime and never stored or committed to the repo.
 
 ## Evaluation Report
 
