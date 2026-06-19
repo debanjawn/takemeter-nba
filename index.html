@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TakeMeter NBA</title>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --panel: #1a1a1f;
+    --orange: #f7741e;
+    --orange-dim: #c95a13;
+    --white: #f5f5f5;
+    --muted: #8a8a92;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1c1c22 0%, var(--bg) 60%);
+    color: var(--white);
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 620px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  header h1 .meter { color: var(--orange); }
+
+  header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid #2a2a31;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="password"],
+  textarea {
+    width: 100%;
+    background: #101013;
+    border: 1px solid #303038;
+    border-radius: 10px;
+    color: var(--white);
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.15s ease;
+  }
+
+  input[type="password"]:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--orange);
+  }
+
+  textarea { min-height: 130px; }
+
+  .field { margin-bottom: 20px; }
+
+  button {
+    width: 100%;
+    background: var(--orange);
+    color: #1a1a1f;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+
+  button:hover:not(:disabled) { background: #ff8531; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { background: var(--orange-dim); cursor: not-allowed; opacity: 0.7; }
+
+  .result {
+    margin-top: 26px;
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .result .verdict {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--orange);
+    text-transform: lowercase;
+  }
+
+  .result .hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .result .error {
+    color: #ff5a5a;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 4px solid #303038;
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Take<span class="meter">Meter</span> NBA</h1>
+      <p>Paste an r/NBATalk comment and see what kind of take it really is.</p>
+    </header>
+
+    <div class="panel">
+      <div class="field">
+        <label for="apiKey">Groq API Key</label>
+        <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="comment">NBA Comment</label>
+        <textarea id="comment" placeholder="They mightve been able to win that chip without Tatum."></textarea>
+      </div>
+
+      <button id="classifyBtn">Classify</button>
+
+      <div class="result" id="result">
+        <span class="hint">Your verdict will appear here.</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const SYSTEM_PROMPT = `You are classifying posts from r/NBATalk, an NBA discussion community.
+Assign each post to exactly one of the following categories.
+
+analysis: The post makes a structured argument backed by statistics, historical comparison, or tactical observation. Evidence is specific and verifiable.
+Example: "Boston attempted the most threes in the league this season, which is why they're so difficult to come back against."
+
+hot_take: A bold, confident opinion stated without supporting evidence. The claim might be true, but the post asserts rather than argues.
+Example: "They mightve been able to win that chip without Tatum."
+
+reaction: An immediate emotional response to a specific event. Little to no argument — the post is expressing a feeling in the moment.
+Example: "NO WAY HE HIT THAT LMAOOOO"
+
+ragebait: A post that expresses a reaction but the claim is so exaggerated it couldn't be a sincere belief — it exists purely to provoke a response or just be outrageous.
+Example: "Trade Chet for an air fryer, him not being here is better."
+
+Respond with ONLY the label name — nothing else. Choose from: analysis, hot_take, reaction, ragebait`;
+
+  const btn = document.getElementById("classifyBtn");
+  const resultEl = document.getElementById("result");
+
+  function showHint(msg) {
+    resultEl.innerHTML = '<span class="hint"></span>';
+    resultEl.querySelector(".hint").textContent = msg;
+  }
+
+  function showError(msg) {
+    resultEl.innerHTML = '<span class="error"></span>';
+    resultEl.querySelector(".error").textContent = msg;
+  }
+
+  function showSpinner() {
+    resultEl.innerHTML = '<div class="spinner"></div>';
+  }
+
+  function showVerdict(label) {
+    resultEl.innerHTML = '<span class="verdict"></span>';
+    resultEl.querySelector(".verdict").textContent = label;
+  }
+
+  async function classify() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const comment = document.getElementById("comment").value.trim();
+
+    if (!apiKey) { showError("Please enter your Groq API key."); return; }
+    if (!comment) { showError("Please paste a comment to classify."); return; }
+
+    btn.disabled = true;
+    showSpinner();
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          temperature: 0,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: comment }
+          ]
+        })
+      });
+
+      if (!res.ok) {
+        let detail = res.status + " " + res.statusText;
+        try {
+          const errBody = await res.json();
+          if (errBody.error && errBody.error.message) detail = errBody.error.message;
+        } catch (_) {}
+        showError("API error: " + detail);
+        return;
+      }
+
+      const data = await res.json();
+      const label = data.choices?.[0]?.message?.content?.trim();
+      if (label) {
+        showVerdict(label);
+      } else {
+        showError("No label returned.");
+      }
+    } catch (err) {
+      showError("Request failed: " + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener("click", classify);
+</script>
+</body>
+</html>
